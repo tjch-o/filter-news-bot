@@ -2,7 +2,7 @@ import os
 import requests
 import csv
 from dotenv import load_dotenv
-from telegram import Update
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 load_dotenv()
@@ -25,7 +25,6 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = "".join([f"{command}\n" for command in command_list])
     await update.message.reply_text("Here are the commands you can use:\n" + "\n" + msg)
     
-    
 async def getCountryCodes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file_path = "countries.csv"
     countries = {}
@@ -40,13 +39,13 @@ async def getCountryCodes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [f"{key}: {value}\n" for key, value in countries.items()]
     )
     await update.message.reply_text("Here are the country codes you can use as parameters for the " + 
-                                    "/top_headline command: \n" + msg)
+                                    "/top_headlines command: \n" + msg)
     
 async def getCategories(update: Update, context: ContextTypes.DEFAULT_TYPE):
     categories = ["business", "entertainment", "general", "health", "science", "sports", "technology"]
     msg = "".join([f"{category}\n" for category in categories])
     await update.message.reply_text("Here are the categories you can use as parameters for the " + 
-                                    "/top_headline command: \n" + msg)
+                                    "/top_headlines command: \n" + msg)
      
 def splitArg(arg):
     return arg.split("=")
@@ -145,7 +144,7 @@ async def getTopHeadlines(update: Update, context: ContextTypes.DEFAULT_TYPE):
     isCorrectParameters = isParametersCorrect(check)
     
     if not isCorrectParameters:
-        await update.message.reply_text("Sorry, the top_headlines command does not have a " + 
+        await update.message.reply_text("Sorry, the /top_headlines command does not have a " + 
                                         f"{check[1]} parameter. Please try again.""")
         return
     
@@ -184,7 +183,7 @@ async def getEverything(update: Update, context: ContextTypes.DEFAULT_TYPE):
     isCorrectParameters = isParametersCorrect(check)
     
     if not isCorrectParameters:
-        await update.message.reply_text("Sorry, the everything command does not have a " + 
+        await update.message.reply_text("Sorry, the /everything command does not have a " + 
         f"{check[1]} parameter. Please try again.")
         return
     
