@@ -17,14 +17,43 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     command_list = [
         "/start - start the bot",
         "/top_headlines - get the latest news headlines about a category, country or source",
+        "/demo_top_headlines - get an example of how to use the /top_headlines command",
         "/country_codes - get the country codes you can use as parameters for the /top_headlines command",
         "/categories - get the categories you can use as parameters for the /top_headlines command",
-        "/everything - get all the news articles related to a keyword"
+        "/everything - get all the news articles related to a keyword",
+        "/demo_everything - get an example of how to use the /everything command"
     ]
     
     msg = "".join([f"{command}\n" for command in command_list])
     await update.message.reply_text("Here are the commands you can use:\n" + "\n" + msg)
     
+async def demo_top_headlines(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    parameters = ["category", "country", "sources", "n"]
+    msg = "To use the /top_headlines command, you can specify the following parameters:\n"
+    
+    for parameter in parameters:
+        msg += f"{parameter}\n"
+    
+    demo_msg = "\nHere is an example of how you can use the /top_headlines command:\n" + \
+                "\n/top_headlines category=technology country=us n=3\n"
+    explanation = "\nThis should return the 3 latest news articles about technology in the US from" + \
+                "BBC News. \nDo take note that the sources parameter cannot be used with the " + \
+                    "country and category parameters."
+    msg += demo_msg + explanation
+    await update.message.reply_text(msg)
+    
+async def demo_everything(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    parameters = ["keyword", "domains", "from", "to", "sortBy", "n"]
+    msg = "To use the /everything command, you can specify the following parameters:\n"
+    
+    for parameter in parameters:
+        msg += f"{parameter}\n"
+    
+    demo_msg = "\nHere is an example of how you can use the /everything command:\n" + \
+                "\n/everything keyword=bitcoin domains=wsj.com from=2021-09-01 to=2021-09-12 sortBy=popularity n=3"
+    msg += demo_msg
+    await update.message.reply_text(msg)
+                
 async def getCountryCodes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file_path = "countries.csv"
     countries = {}
@@ -206,4 +235,6 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("everything", getEverything))
     app.add_handler(CommandHandler("country_codes", getCountryCodes))
     app.add_handler(CommandHandler("categories", getCategories))
+    app.add_handler(CommandHandler("demo_top_headlines", demo_top_headlines))
+    app.add_handler(CommandHandler("demo_everything", demo_everything))
     app.run_polling(poll_interval=0.5)
