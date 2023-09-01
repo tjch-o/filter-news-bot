@@ -8,7 +8,9 @@ To run this bot on your machine, you will need:
 
 To download all dependencies, use the following command:
 
-```pip install -r requirements.txt```
+```
+pip install -r requirements.txt
+```
 
 To start the bot, use the `/start` command.
 
