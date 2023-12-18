@@ -6,14 +6,8 @@ To run this bot on your machine, you will need:
 - a NewsAPI API key
 - load the token and the api key into a `.env` file in the same directory
 
-To download all dependencies, use the following command:
-
-```
-pip install -r requirements.txt
-```
-
 To start the bot, use the `/start` command.
 
-To learn how to use the bot, use the `/help` command.
+To view all the available commands and learn how to use the bot, use the `/help` command.
 
-Credits to NewsAPI for the news data.
+Credits to NewsAPI for providing the news data.
