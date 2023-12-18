@@ -10,7 +10,7 @@ from telegram.ext import (
     CommandHandler,
     ContextTypes,
     MessageHandler,
-    filters,
+    filters
 )
 
 load_dotenv()
@@ -134,7 +134,6 @@ def get_value(arg):
 
 
 def update_news_parameters(news_parameters, args):
-    print(args)
     if args:
         for arg in args:
             key = get_key(arg)
@@ -340,7 +339,6 @@ async def get_random_headline(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     res = requests.get(api_endpoint_without_query)
     data = res.json()
-    print(data)
 
     if data.get("status") == "ok":
         articles = data.get("articles")
