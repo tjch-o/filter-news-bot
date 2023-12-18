@@ -45,7 +45,7 @@ async def demo_top_headlines(update: Update, context: ContextTypes.DEFAULT_TYPE)
         + "\n/top_headlines category=technology country=us n=3\n"
     )
     explanation = (
-        "\nThis should return the 3 latest news articles about technology in the US from"
+        "\nThis should return (up to) 3 latest news articles about technology in the US from"
         + "BBC News. \nDo take note that the sources parameter cannot be used with the "
         + "country and category parameters."
     )
@@ -74,7 +74,7 @@ async def demo_everything(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(msg)
 
 
-async def getCountryCodes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def get_country_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file_path = "countries.csv"
     countries = {}
 
@@ -92,7 +92,7 @@ async def getCountryCodes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def getCategories(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def get_categories(update: Update, context: ContextTypes.DEFAULT_TYPE):
     categories = [
         "business",
         "entertainment",
@@ -110,76 +110,79 @@ async def getCategories(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-def splitArg(arg):
+def split_arg(arg):
     return arg.split("=")
 
 
-def getKey(arg):
-    return splitArg(arg)[0]
+def get_key(arg):
+    return split_arg(arg)[0]
 
 
-def getValue(arg):
-    return splitArg(arg)[1]
+def get_value(arg):
+    return split_arg(arg)[1]
 
 
-def updateNewsParameters(news_parameters, args):
+def update_news_parameters(news_parameters, args):
     print(args)
     if args:
         for arg in args:
-            key = getKey(arg)
-            value = getValue(arg)
+            key = get_key(arg)
+            value = get_value(arg)
             if key != "n":
                 news_parameters[key] = value
             else:
                 news_parameters[key] = int(value)
 
 
-def parametersCheck(news_parameters, correct_parameters, incorrect_parameters):
+def check_parameters(news_parameters, correct_parameters, incorrect_parameters):
     for parameter in news_parameters:
         if parameter in incorrect_parameters or parameter not in correct_parameters:
             return [False, parameter]
     return [True, ""]
 
 
-def isParametersCorrect(result):
+def is_parameters_correct(result):
     return result[0]
 
 
-def constructApiEndpoint(
+def construct_api_endpoint(
     endpoint, keyword, category, country, domains, sources, from_date, to_date, sortBy
 ):
-    apiEndpointWithoutQuery = f"https://newsapi.org/v2/{endpoint}?"
+    api_endpoint_without_query = f"https://newsapi.org/v2/{endpoint}?"
 
     if keyword:
-        apiEndpointWithoutQuery += f"q={keyword}&"
+        api_endpoint_without_query += f"q={keyword}&"
     if category:
-        apiEndpointWithoutQuery += f"category={category}&"
+        api_endpoint_without_query += f"category={category}&"
     if country:
-        apiEndpointWithoutQuery += f"country={country}&"
+        api_endpoint_without_query += f"country={country}&"
     if domains:
-        apiEndpointWithoutQuery += f"domains={domains}&"
+        api_endpoint_without_query += f"domains={domains}&"
     if sources:
-        apiEndpointWithoutQuery += f"sources={sources}&"
+        api_endpoint_without_query += f"sources={sources}&"
     if from_date:
-        apiEndpointWithoutQuery += f"from={from_date}&"
+        api_endpoint_without_query += f"from={from_date}&"
     if to_date:
-        apiEndpointWithoutQuery += f"to={to_date}&"
+        api_endpoint_without_query += f"to={to_date}&"
     if sortBy:
-        apiEndpointWithoutQuery += f"sortBy={sortBy}&"
+        api_endpoint_without_query += f"sortBy={sortBy}&"
 
-    apiEndpointWithoutQuery += f"apiKey={apiKey}"
-    return apiEndpointWithoutQuery
+    api_endpoint_without_query += f"apiKey={apiKey}"
+    return api_endpoint_without_query
 
 
-async def handleData(update: Update, news_parameters, data):
+async def handle_data(update: Update, news_parameters, data):
     if data.get("status") == "ok":
         articles = data.get("articles")
         if articles:
-            print(news_parameters["n"])
             for i in range(news_parameters["n"]):
                 title = articles[i]["title"]
                 url = articles[i]["url"]
                 await update.message.reply_text(f"{title}\n\n{url}")
+        else:
+            await update.message.reply_text(
+                "Sorry, I could not find any news articles that match your query."
+            )
 
     else:
         too_far_back_error_msg = (
@@ -193,12 +196,11 @@ async def handleData(update: Update, news_parameters, data):
             return
 
         await update.message.reply_text(
-            "Sorry, something went wrong when trying to fetch the "
-            + "latest news. Please try again later."
+            "Sorry, something went wrong when trying to fetch the latest news. Please try again later."
         )
 
 
-async def getTopHeadlines(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def get_top_headlines(update: Update, context: ContextTypes.DEFAULT_TYPE):
     endpoint = "top-headlines"
     news_parameters = {"category": "", "country": "", "sources": "", "n": 1}
 
@@ -213,11 +215,11 @@ async def getTopHeadlines(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
 
     args = context.args
-    updateNewsParameters(news_parameters, args)
-    check = parametersCheck(news_parameters, correct_parameters, incorrect_parameters)
-    isCorrectParameters = isParametersCorrect(check)
+    update_news_parameters(news_parameters, args)
+    check = check_parameters(news_parameters, correct_parameters, incorrect_parameters)
+    status = is_parameters_correct(check)
 
-    if not isCorrectParameters:
+    if not status:
         await update.message.reply_text(
             "Sorry, the /top_headlines command does not have a "
             + f"{check[1]} parameter. Please try again."
@@ -225,7 +227,7 @@ async def getTopHeadlines(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    apiEndpoint = constructApiEndpoint(
+    api_endpoint = construct_api_endpoint(
         endpoint,
         "",
         news_parameters["category"],
@@ -237,13 +239,13 @@ async def getTopHeadlines(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "",
     )
 
-    res = requests.get(apiEndpoint)
+    res = requests.get(api_endpoint)
     data = res.json()
 
-    await handleData(update, news_parameters, data)
+    await handle_data(update, news_parameters, data)
 
 
-async def getEverything(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def get_everything(update: Update, context: ContextTypes.DEFAULT_TYPE):
     endpoint = "everything"
     news_parameters = {
         "keyword": "",
@@ -259,18 +261,18 @@ async def getEverything(update: Update, context: ContextTypes.DEFAULT_TYPE):
     incorrect_parameters = {"category": "", "country": "", "sources": ""}
 
     args = context.args
-    updateNewsParameters(news_parameters, args)
-    check = parametersCheck(news_parameters, correct_parameters, incorrect_parameters)
-    isCorrectParameters = isParametersCorrect(check)
+    update_news_parameters(news_parameters, args)
+    check = check_parameters(news_parameters, correct_parameters, incorrect_parameters)
+    status = is_parameters_correct(check)
 
-    if not isCorrectParameters:
+    if not status:
         await update.message.reply_text(
             "Sorry, the /everything command does not have a "
             + f"{check[1]} parameter. Please try again."
         )
         return
 
-    apiEndpoint = constructApiEndpoint(
+    api_endpoint = construct_api_endpoint(
         endpoint,
         news_parameters["keyword"],
         "",
@@ -281,23 +283,21 @@ async def getEverything(update: Update, context: ContextTypes.DEFAULT_TYPE):
         news_parameters["to"],
         news_parameters["sortBy"],
     )
-    print(apiEndpoint)
 
-    res = requests.get(apiEndpoint)
+    res = requests.get(api_endpoint)
     data = res.json()
-    print(data)
 
-    await handleData(update, news_parameters, data)
+    await handle_data(update, news_parameters, data)
 
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(token).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help))
-    app.add_handler(CommandHandler("top_headlines", getTopHeadlines))
-    app.add_handler(CommandHandler("everything", getEverything))
-    app.add_handler(CommandHandler("country_codes", getCountryCodes))
-    app.add_handler(CommandHandler("categories", getCategories))
+    app.add_handler(CommandHandler("top_headlines", get_top_headlines))
+    app.add_handler(CommandHandler("everything", get_everything))
+    app.add_handler(CommandHandler("country_codes", get_country_codes))
+    app.add_handler(CommandHandler("categories", get_categories))
     app.add_handler(CommandHandler("demo_top_headlines", demo_top_headlines))
     app.add_handler(CommandHandler("demo_everything", demo_everything))
     app.run_polling(poll_interval=0.5)
