@@ -4,7 +4,13 @@ import os
 import requests
 from dotenv import load_dotenv
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters
+)
 
 load_dotenv()
 
@@ -24,6 +30,10 @@ command_list = [
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("The news bot is at your service!")
+
+
+async def handle_invalid_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("This command does not exist.")
 
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -149,26 +159,27 @@ def construct_api_endpoint(
     endpoint, keyword, category, country, domains, sources, from_date, to_date, sortBy
 ):
     api_endpoint_without_query = f"https://newsapi.org/v2/{endpoint}?"
+    api_endpoint = api_endpoint_without_query
 
     if keyword:
-        api_endpoint_without_query += f"q={keyword}&"
+        api_endpoint += f"q={keyword}&"
     if category:
-        api_endpoint_without_query += f"category={category}&"
+        api_endpoint += f"category={category}&"
     if country:
-        api_endpoint_without_query += f"country={country}&"
+        api_endpoint += f"country={country}&"
     if domains:
-        api_endpoint_without_query += f"domains={domains}&"
+        api_endpoint += f"domains={domains}&"
     if sources:
-        api_endpoint_without_query += f"sources={sources}&"
+        api_endpoint += f"sources={sources}&"
     if from_date:
-        api_endpoint_without_query += f"from={from_date}&"
+        api_endpoint += f"from={from_date}&"
     if to_date:
-        api_endpoint_without_query += f"to={to_date}&"
+        api_endpoint += f"to={to_date}&"
     if sortBy:
-        api_endpoint_without_query += f"sortBy={sortBy}&"
+        api_endpoint += f"sortBy={sortBy}&"
 
-    api_endpoint_without_query += f"apiKey={apiKey}"
-    return api_endpoint_without_query
+    api_endpoint += f"apiKey={apiKey}"
+    return api_endpoint
 
 
 async def handle_data(update: Update, news_parameters, data):
@@ -300,4 +311,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("categories", get_categories))
     app.add_handler(CommandHandler("demo_top_headlines", demo_top_headlines))
     app.add_handler(CommandHandler("demo_everything", demo_everything))
+
+    app.add_handler(MessageHandler(filters.TEXT, handle_invalid_commands))
+    app.add_handler(MessageHandler(~filters.COMMAND, handle_invalid_commands))
     app.run_polling(poll_interval=0.5)
