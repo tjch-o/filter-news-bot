@@ -1,6 +1,7 @@
 import csv
 import datetime
 import os
+import random
 import requests
 from dotenv import load_dotenv
 from telegram import Update
@@ -9,7 +10,7 @@ from telegram.ext import (
     CommandHandler,
     ContextTypes,
     MessageHandler,
-    filters
+    filters,
 )
 
 load_dotenv()
@@ -25,6 +26,8 @@ command_list = [
     "/categories - get the categories you can use as parameters for the /top_headlines command",
     "/everything - get all the news articles related to a keyword",
     "/demo_everything - get an example of how to use the /everything command",
+    "/search - search for the latest news articles related to a keyword",
+    "/random_headline - get a random news headline",
 ]
 
 
@@ -96,8 +99,7 @@ async def get_country_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     msg = "".join([f"{key}: {value}\n" for key, value in countries.items()])
     await update.message.reply_text(
-        "Here are the country codes you can use as parameters for the "
-        + "/top_headlines command: \n"
+        "Here are the country codes you can use as parameters for the /top_headlines command: \n"
         + msg
     )
 
@@ -114,8 +116,7 @@ async def get_categories(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     msg = "".join([f"{category}\n" for category in categories])
     await update.message.reply_text(
-        "Here are the categories you can use as parameters for the "
-        + "/top_headlines command: \n"
+        "Here are the categories you can use as parameters for the /top_headlines command: \n"
         + msg
     )
 
@@ -207,7 +208,7 @@ async def handle_data(update: Update, news_parameters, data):
             return
 
         await update.message.reply_text(
-            "Sorry, something went wrong when trying to fetch the latest news. Please try again later."
+            "Sorry, something went wrong when fetching the latest news. Please try again later."
         )
 
 
@@ -252,7 +253,6 @@ async def get_top_headlines(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     res = requests.get(api_endpoint)
     data = res.json()
-
     await handle_data(update, news_parameters, data)
 
 
@@ -297,8 +297,62 @@ async def get_everything(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     res = requests.get(api_endpoint)
     data = res.json()
-
     await handle_data(update, news_parameters, data)
+
+
+async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    endpoint = "everything"
+    news_parameters = {
+        "keyword": "",
+        "domains": "",
+        "from": "",
+        "to": "",
+        "sortBy": "",
+        "n": 3,
+    }
+
+    keyword = context.args[0]
+    news_parameters["keyword"] = keyword
+    news_parameters["sortBy"] = "publishedAt"
+
+    api_endpoint = construct_api_endpoint(
+        endpoint,
+        news_parameters["keyword"],
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        news_parameters["sortBy"],
+    )
+
+    res = requests.get(api_endpoint)
+    data = res.json()
+    await handle_data(update, news_parameters, data)
+
+
+async def get_random_headline(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    endpoint = "top-headlines"
+    api_endpoint_without_query = (
+        f"https://newsapi.org/v2/{endpoint}?apiKey={apiKey}&language=en"
+    )
+
+    res = requests.get(api_endpoint_without_query)
+    data = res.json()
+    print(data)
+
+    if data.get("status") == "ok":
+        articles = data.get("articles")
+        if articles:
+            random_article = random.choice(articles)
+            title = random_article["title"]
+            url = random_article["url"]
+            await update.message.reply_text(f"{title}\n\n{url}")
+    else:
+        await update.message.reply_text(
+            "Sorry, something went wrong when fetching a random headline. Please try again later."
+        )
 
 
 if __name__ == "__main__":
@@ -311,6 +365,8 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("categories", get_categories))
     app.add_handler(CommandHandler("demo_top_headlines", demo_top_headlines))
     app.add_handler(CommandHandler("demo_everything", demo_everything))
+    app.add_handler(CommandHandler("search", search))
+    app.add_handler(CommandHandler("random_headline", get_random_headline))
 
     app.add_handler(MessageHandler(filters.TEXT, handle_invalid_commands))
     app.add_handler(MessageHandler(~filters.COMMAND, handle_invalid_commands))
