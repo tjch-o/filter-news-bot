@@ -10,7 +10,7 @@ from telegram.ext import (
     CommandHandler,
     ContextTypes,
     MessageHandler,
-    filters
+    filters,
 )
 
 load_dotenv()
@@ -58,10 +58,12 @@ async def demo_top_headlines(update: Update, context: ContextTypes.DEFAULT_TYPE)
         + "\n/top_headlines category=technology country=us n=3\n"
     )
     explanation = (
-        "\nThis should return (up to) 3 latest news articles about technology in the US from"
-        + "BBC News. \nDo take note that the sources parameter cannot be used with the "
-        + "country and category parameters."
+        "\nThis should return (up to) 3 latest top headlines about technology in the US from "
+        + "the BBC.\n\nDo take note that the sources parameter cannot be used with the "
+        + "country and category parameters. Feel free to use the /country_codes command to find out" 
+        + " what code to use for the country parameter."
     )
+
     msg += demo_msg + explanation
     await update.message.reply_text(msg)
 
@@ -81,9 +83,14 @@ async def demo_everything(update: Update, context: ContextTypes.DEFAULT_TYPE):
     demo_msg = (
         "\nHere is an example of how you can use the /everything command:\n"
         + f"\n/everything keyword=bitcoin domains=wsj.com from={month_before_today_date_str} "
-        + f"to={today_date_str} sortBy=popularity n=3"
+        + f"to={today_date_str} sortBy=popularity n=3\n"
     )
-    msg += demo_msg
+    explanation = (
+        "\nThis should return (up to) 3 most popular news articles about Bitcoin from "
+        + f"the Wall Street Journal from {month_before_today_date_str} to {today_date_str}."
+    )
+
+    msg += demo_msg + explanation
     await update.message.reply_text(msg)
 
 
@@ -100,6 +107,7 @@ async def get_country_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = "".join([f"{key}: {value}\n" for key, value in countries.items()])
     await update.message.reply_text(
         "Here are the country codes you can use as parameters for the /top_headlines command: \n"
+        + "\n"
         + msg
     )
 
@@ -178,7 +186,7 @@ def construct_api_endpoint(
     if sortBy:
         api_endpoint += f"sortBy={sortBy}&"
 
-    api_endpoint += f"apiKey={apiKey}&language=en"
+    api_endpoint += f"apiKey={api_key}&language=en"
     return api_endpoint
 
 
@@ -187,6 +195,8 @@ async def handle_data(update: Update, news_parameters, data):
         articles = data.get("articles")
         if articles:
             for i in range(news_parameters["n"]):
+                if i >= len(articles):
+                    break
                 title = articles[i]["title"]
                 url = articles[i]["url"]
                 await update.message.reply_text(f"{title}\n\n{url}")
@@ -334,7 +344,7 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_random_headline(update: Update, context: ContextTypes.DEFAULT_TYPE):
     endpoint = "top-headlines"
     api_endpoint_without_query = (
-        f"https://newsapi.org/v2/{endpoint}?apiKey={apiKey}&language=en"
+        f"https://newsapi.org/v2/{endpoint}?apiKey={api_key}&language=en"
     )
 
     res = requests.get(api_endpoint_without_query)
