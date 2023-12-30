@@ -16,7 +16,7 @@ from telegram.ext import (
 load_dotenv()
 
 token = os.getenv("TELEGRAM_BOT_TOKEN")
-apiKey = os.getenv("NEWSAPI_KEY")
+api_key = os.getenv("NEWSAPI_KEY")
 
 command_list = [
     "/start - start the bot",
@@ -178,7 +178,7 @@ def construct_api_endpoint(
     if sortBy:
         api_endpoint += f"sortBy={sortBy}&"
 
-    api_endpoint += f"apiKey={apiKey}"
+    api_endpoint += f"apiKey={apiKey}&language=en"
     return api_endpoint
 
 
